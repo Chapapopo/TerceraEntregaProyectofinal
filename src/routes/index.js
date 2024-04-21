@@ -7,7 +7,6 @@ import loginRoutes from './login.Routes.js';
 import registerRoutes from './register.Routes.js';
 import logoutRoutes from './logout.Routes.js';
 import chatRoutes from './chat.Routes.js'
-import ticketRoutes from './ticket.Routes.js'
 import Routes from './Routes.js'; // Importa las rutas desde Routes.js
 
 export {
@@ -20,6 +19,5 @@ export {
   registerRoutes,
   logoutRoutes,
   chatRoutes,
-  ticketRoutes,
   Routes
 };

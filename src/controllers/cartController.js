@@ -1,4 +1,4 @@
-import { searchCartsPorId, searchUserPorId, searchProductsPorId, deleteAllProductosPorId, deleteProductoDelCarritoPorId, crearCarrito, cargarCarrito, calcularCosto, buscarCorreoPorNumeroDeCart, crearTiket } from '../services/funciones.js';
+import { searchCartsPorId, searchUserPorId, searchProductsPorId, deleteAllProductosPorId, deleteProductoDelCarritoPorId, crearCarrito, cargarCarrito, productosVender, calcularCosto, buscarCorreoPorNumeroDeCart, crearTiket, extraigoStock } from '../services/funciones.js';
 
 const admin = {
   name: process.env.adminName,
@@ -91,15 +91,15 @@ cartController.terminarCompra = async (req, res) => {
   try {
     const idCarrito = parseInt(req.params.id, 10);
 
-    //Productos en stock
-    const productos = await productosVender(idCarrito)
+    // Productos en stock
+    const productos = await productosVender(idCarrito);
 
     // Utiliza la función calcularCosto para obtener el costo del carrito
-    const costo = await calcularCosto(idCarrito);
+    const costo = await calcularCosto(productos);
     if (costo === null) {
       return res.status(404).send("Carrito no encontrado");
     }
- 
+
     // Utiliza la función buscarCorreoPorNumeroDeCart para obtener el correo del usuario asociado al carrito
     const correo = await buscarCorreoPorNumeroDeCart(idCarrito);
     if (correo === null) {
@@ -112,13 +112,22 @@ cartController.terminarCompra = async (req, res) => {
       return res.status(500).send("Error al crear el Ticket");
     }
 
-    await deleteAllProductosPorId(idCarrito);
-    res.status(200).send(`Todos los productos del carrito con id ${idCarrito} han sido eliminados.`);
+    // funcion modificar la cantidad de productos en la base de datos acorde a productos
+    await extraigoStock(productos)
+
+    // Elimina cada producto del carrito utilizando la función deleteProductoDelCarritoPorId
+    for (const producto of productos) {
+      await deleteProductoDelCarritoPorId(idCarrito, producto.id);
+    }
+
+    // Envía una respuesta de éxito
+    res.status(200).send("Compra finalizada con éxito");
 
   } catch (error) {
     console.error(error);
     res.status(500).send("Error interno del servidor");
   }
 };
+
 
 export default cartController;

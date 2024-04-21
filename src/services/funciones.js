@@ -272,6 +272,7 @@ export const cargarCarrito = async (idCarrito, idProducto) => {
             // Incrementar la cantidad del producto en el carrito
             await modificarCarritoPorId(idCarrito, idProducto, 'cantidad', productoEnCarrito.cantidad + 1);
             console.log(`Cantidad del producto con id ${idProducto} en el carrito con id ${idCarrito} incrementada.`);
+            return;
         }
 
         // Agregar el producto al carrito
@@ -286,7 +287,7 @@ export const cargarCarrito = async (idCarrito, idProducto) => {
         };
         const productoActualizado = await Carts.findOneAndUpdate({ id: idCarrito }, update, { new: true });
         console.log(`Producto con id ${idProducto} agregado al carrito con id ${idCarrito}.`);
-        
+
     } catch (error) {
         console.error(`Error al cargar el producto en el carrito: ${error.message}`);
     }
@@ -389,26 +390,16 @@ export const crearTiket = async (costo, correo) => {
     }
 };
 
-export const calcularCosto = async (id) => {
+export const calcularCosto = async (productosFinales) => {
     try {
-        // Encontrar el carrito con el ID proporcionado
-        const carrito = await Carts.findOne({ id: id });
-
-        if (!carrito) {
-            console.log(`Carrito con ID ${id} no encontrado.`);
-            return null;
-        }
-
-        // Si el carrito se encuentra, continuar con el cálculo del costo
         let costoTotal = 0;
-        for (const producto of carrito.products) {
-            const precioProducto = await buscarProductoPorid(producto.id);
-            if (precioProducto !== null) {
-                costoTotal += precioProducto * producto.cantidad; // Multiplica el precio por la cantidad y suma al costo total
-            }
+
+        // Calcular el costo total sumando el precio de cada producto en productosFinales
+        for (const producto of productosFinales) {
+            costoTotal += producto.precio * producto.cantidad;
         }
 
-        console.log(`Costo total del carrito ${id}: ${costoTotal}`);
+        console.log(`Costo total del carrito: ${costoTotal}`);
         return costoTotal;
 
     } catch (error) {
@@ -453,9 +444,71 @@ export const buscarProductoPorid = async (id) => {
 
 export const productosVender = async (id) => {
     try {
+        const carrito = await searchCartsPorId2(id);
+        if (!carrito) {
+            console.error(`No se encontró un carrito con id ${id}.`);
+            return null;
+        }
 
+        console.log("Productos del carrito:");
+        console.log(carrito.products);
+
+        // Obtener información detallada de cada producto en el carrito
+        const productosFinales = [];
+        for (const item of carrito.products) {
+            // Buscar el producto en la base de datos por su ID
+            const producto = await searchProductsPorId2(item.id);
+            if (!producto) {
+                console.error(`No se encontró un producto con id ${item.id}.`);
+                continue; // Continuar con el siguiente producto si este no se encuentra
+            }
+
+            // Verificar disponibilidad
+            if (producto.cantidad >= item.cantidad) {
+                // Si hay suficiente cantidad en stock, agregar al array de productos finales
+                productosFinales.push({
+                    id: producto.id,
+                    titulo: producto.titulo,
+                    cantidad: item.cantidad,
+                    precio: producto.precio,
+                });
+            } else {
+                console.error(`Producto con id ${item.id} no tiene suficiente cantidad en stock.`);
+            }
+        }
+
+        console.log("Productos finales:");
+        console.log(productosFinales);
+
+        return productosFinales;
     } catch (error) {
         console.error(`Error al calcular coste del carrito: ${error.message}`);
         return null;
+    }
+};
+
+export const extraigoStock = async (productos) => {
+    try {
+        for (const producto of productos) {
+            // Buscar el producto en la base de datos por su ID
+            const productoDB = await searchProductsPorId2(producto.id);
+
+            if (!productoDB) {
+                console.error(`Producto con ID ${producto.id} no encontrado en la base de datos.`);
+                continue; // Continuar con el siguiente producto si no se encuentra en la base de datos
+            }
+
+            // Verificar que la cantidad en stock sea mayor o igual a la cantidad solicitada
+            if (productoDB.cantidad >= producto.cantidad) {
+                // Restar la cantidad solicitada del stock del producto
+                productoDB.cantidad -= producto.cantidad;
+                await modificarProductoPorId(producto.id, 'cantidad', productoDB.cantidad);
+                console.log(`Stock actualizado para el producto con ID ${producto.id}`);
+            } else {
+                console.error(`No hay suficiente stock para el producto con ID ${producto.id}`);
+            }
+        }
+    } catch (error) {
+        console.error(`Error al actualizar el stock: ${error.message}`);
     }
 };
