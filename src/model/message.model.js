@@ -5,13 +5,17 @@ const collectionName = "Message";
 const messageSchema = new mongoose.Schema({
     user: {
         type: String,
-        require: true,
+        required: true,
     },
     message: {
         type: String,
-        require: true,
+        required: true,
+    },
+    date: {
+        type: Date,
+        default: Date.now, // Establece la fecha actual como valor predeterminado
     }
 });
 
-const messageModel = mongoose.model(collectionName, messageSchema)
-module.exports = messageModel;
+const messageModel = mongoose.model(collectionName, messageSchema);
+export default messageModel;

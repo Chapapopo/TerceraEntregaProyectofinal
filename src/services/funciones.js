@@ -1,7 +1,8 @@
 import Product from '../model/producto.model.js'; // Importa el modelo Product
 import Carts from '../model/cart.model.js'; // Importa el modelo Cart
 import Users from '../model/user.model.js'; // Importa el modelo User
-import Tickets from '../model/ticket.model.js'; // Importa el modelo User
+import Tickets from '../model/ticket.model.js'; // Importa el modelo Tickets
+import Message from '../model/message.model.js'; // Importa el modelo Message
 
 //Realiza una búsqueda paginada de productos en la base de datos, con opción de filtrar por marca y ordenar por precio.
 export const searchProducts = async (page = 1, limit = 10, marca = '', orden = 'asc') => {
@@ -215,7 +216,7 @@ export const crearCarrito = async () => {
         await nuevoCarrito.save();
 
         console.log(`Carrito creado correctamente.`);
-        
+
         // Retornar la ID del carrito creado
         return nuevoCarrito.id;
     } catch (error) {
@@ -431,8 +432,8 @@ export const ensureUser = (req, res, next) => {
         // Si el usuario está autenticado y es usuario normal, continuar
         return next();
     } else {
-        // Si no está autenticado o no es usuario normal, mostrar error de acceso prohibido
-        res.status(403).send('Acceso prohibido');
+        // Si el usuario no está autenticado, redirigir al login
+        res.redirect('/log');
     }
 };
 
@@ -443,8 +444,8 @@ export const ensureAdmin = (req, res, next) => {
         // Si el usuario está autenticado y es administrador, continuar
         return next();
     } else {
-        // Si no está autenticado o no es administrador, mostrar error de acceso prohibido
-        res.status(403).send('Acceso prohibido');
+        // Si el usuario no está autenticado, redirigir al login
+        res.redirect('/log');
     }
 };
 
@@ -462,7 +463,7 @@ export const crearTiket = async (costo, correo) => {
         // Guardar el nuevo ticket en la base de datos
         await nuevoTiket.save();
         console.log(`Ticket creado correctamente.`);
-        
+
         // Retorna el código del ticket creado
         return nuevoTiket.code;
     } catch (error) {
@@ -527,7 +528,7 @@ export const buscarProductoPorId = async (id) => {
         if (productoEncontrado) {
             // Mostrar el producto encontrado en la consola
             console.log(`Producto encontrado: ${productoEncontrado}`);
-            
+
             // Devuelve solo el precio del producto encontrado
             return productoEncontrado.precio;
         } else {
@@ -613,5 +614,103 @@ export const extraigoStock = async (productos) => {
         }
     } catch (error) {
         console.error(`Error al actualizar el stock: ${error.message}`);
+    }
+};
+
+//Función para crear producto
+export const cargarProducto = async (producto) => {
+    const intentosMaximos = 3; // Número máximo de intentos permitidos
+    let contadorIntentos = 0;
+
+    while (contadorIntentos < intentosMaximos) {
+        let nuevoId = Math.floor(Math.random() * 1000); // Genera un nuevo id al azar
+        try {
+            const nuevoProducto = new Product({
+                id: nuevoId,
+                titulo: producto.titulo,
+                descripcion: producto.descripcion,
+                code: producto.code,
+                precio: producto.precio,
+                estado: true, // Estado siempre se establece en true
+                cantidad: producto.cantidad,
+                marca: producto.marca,
+                categoria: producto.categoria,
+                demografia: producto.demografia,
+                imagen: producto.imagen
+            });
+            await nuevoProducto.save();
+            console.log(`Producto con id ${nuevoId} cargado a Atlas.`);
+            break; // Salir del bucle si se guardó correctamente
+        } catch (error) {
+            if (error.code === 11000 && error.message.includes("id")) {
+                console.error(`Error al cargar el producto con id ${nuevoId}: ${error.message}`);
+            } else {
+                console.error(`Error al cargar el producto con id ${nuevoId}: ${error.message}`);
+                break; // Salir del bucle en caso de otro tipo de error
+            }
+        }
+        contadorIntentos++;
+    }
+
+    if (contadorIntentos === intentosMaximos) {
+        console.error(`Se alcanzó el número máximo de intentos (${intentosMaximos}) sin poder cargar el producto.`);
+    }
+};
+
+//Función para crear un mensaje
+export const createMessage = async (nameData, messageData) => {
+    try {
+        const nombre = nameData;
+        const mensaje = messageData;
+
+        // Crea un nuevo mensaje con los datos proporcionados
+        const newMessage = new Message({
+            user: nombre,
+            message: mensaje
+        });
+
+        // Guarda el nuevo mensaje en la base de datos
+        await newMessage.save();
+
+        return newMessage;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Error al crear el mensaje');
+    }
+};
+
+//Función para buscar todos los mensajes
+export const searchMessages = async () => {
+    try {
+        // Busca todos los mensajes en la base de datos
+        const messages = await Message.find();
+
+        // Convertir los mensajes a un array de JavaScript
+        const messagesJS = messages.map(message => {
+            return {
+                user: message.user,
+                message: message.message,
+                date: message.date,
+            };
+        });
+
+        return messagesJS;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Error al obtener los mensajes');
+    }
+};
+
+//Función para borrar un producto
+export const deleteProductsPorId = async (idProducto) => {
+    try {
+        const result = await Product.deleteOne({ id: idProducto });
+        if (result.deletedCount === 0) {
+            console.error(`No se encontró un producto con id ${idProducto}.`);
+            return;
+        }
+        console.log(`Producto con id ${idProducto} eliminado.`);
+    } catch (error) {
+        console.error(`Error al eliminar el producto: ${error.message}`);
     }
 };

@@ -6,4 +6,6 @@ const router = express.Router();
 
 router.get('/', ensureUser, chatController.mostrarChat);
 
+router.post('/', ensureUser, chatController.crearMessage);
+
 export default router;

@@ -12,7 +12,7 @@ import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Server } from "socket.io";
 import bcrypt from 'bcryptjs';
 import Users from './model/user.model.js'; // Importa el modelo User
-import { productosRoutes, cartRoutes, currentRoutes, authRoutes, logRoutes, loginRoutes, registerRoutes, logoutRoutes, Routes, chatRoutes} from './routes/index.js';
+import { productosRoutes, cartRoutes, currentRoutes, authRoutes, logRoutes, loginRoutes, registerRoutes, logoutRoutes, Routes, chatRoutes, makeRoutes} from './routes/index.js';
 
 config();//
 
@@ -167,3 +167,4 @@ app.use('/register', registerRoutes);
 app.use('/login', loginRoutes);
 app.use('/logout', logoutRoutes);
 app.use('/chat', chatRoutes);
+app.use('/make', makeRoutes);
