@@ -1,5 +1,6 @@
 /* import {socket} from "socket.io"; */
-import {createMessage, searchMessages} from '../services/funciones.js';
+/* import { connect } from 'mongoose'; */
+import {searchMessages} from '../services/funciones.js';
 
 const chatController = {};
 
@@ -8,26 +9,7 @@ chatController.mostrarChat = async (req, res) => {
     console.log("Chat")
     // Buscar todos los mensajes en la base de datos
     const mensajes = await searchMessages();
-    res.render("chat", { title: "Chat", messages: mensajes }); // Pasamos un array de mensajes a la plantilla
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error interno del servidor");
-  }
-};
-
-chatController.crearMessage = async (req, res) => {
-  try {
-    const {message} = req.body;
-    const name = req.user.name
-
-    console.log(message)
-    console.log(name)
-
-    const mensaje = await createMessage(name, message);
-
-    console.log(mensaje)
-
-    res.redirect("/chat");
+    res.render("chat", { title: "Chat", messages: mensajes, nombre: "Pedro"}); // Pasamos un array de mensajes a la plantilla
   } catch (error) {
     console.error(error);
     res.status(500).send("Error interno del servidor");

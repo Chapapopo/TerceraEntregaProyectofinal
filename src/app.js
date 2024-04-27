@@ -12,7 +12,9 @@ import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Server } from "socket.io";
 import bcrypt from 'bcryptjs';
 import Users from './model/user.model.js'; // Importa el modelo User
-import { productosRoutes, cartRoutes, currentRoutes, authRoutes, logRoutes, loginRoutes, registerRoutes, logoutRoutes, Routes, chatRoutes, makeRoutes} from './routes/index.js';
+import { productosRoutes, cartRoutes, currentRoutes, authRoutes, logRoutes, loginRoutes, registerRoutes, logoutRoutes, Routes, chatRoutes, makeRoutes } from './routes/index.js';
+import { createMessage } from "./services/funciones.js";
+import Message from './model/message.model.js'; // Importa el modelo Message
 
 config();//
 
@@ -34,7 +36,7 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser(process.env.secreto)); 
+app.use(cookieParser(process.env.secreto));
 app.use(session({
   secret: process.env.secreto, // Cambia esto por una cadena de caracteres segura
   resave: true, //
@@ -168,3 +170,25 @@ app.use('/login', loginRoutes);
 app.use('/logout', logoutRoutes);
 app.use('/chat', chatRoutes);
 app.use('/make', makeRoutes);
+
+// Configurar Socket.io
+io.on('connection', (socket) => {
+  console.log('Usuario conectado');
+
+  // Manejar el evento de nuevo mensaje del cliente
+  socket.on('chat message', async (msg) => {
+    console.log('Mensaje recibido:', msg);
+
+    // Crea un nuevo mensaje con los datos proporcionados
+    const newMessage = new Message({
+      user: msg.username,
+      message: msg.message
+    });
+
+    // Guarda el nuevo mensaje en la base de datos
+    await newMessage.save();
+
+    // Emitir el mensaje a todos los clientes conectados
+    io.emit('chat message', msg);
+  });
+});

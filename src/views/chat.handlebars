@@ -9,7 +9,10 @@
     {{/each}}
 </ul>
 
-<form action="/chat" method="POST">
-    <input type="text" name="message" placeholder="Your Message" required>
-    <button type="submit">Send</button>
+<h1>Chat en tiempo real</h1>
+<ul id="messages"></ul>
+<form id="form" action="">
+    <input id="username" placeholder="Usuario" autocomplete="off" /><br>
+    <input id="message" placeholder="Escribe tu mensaje" autocomplete="off" /><br>
+    <button>Enviar</button>
 </form>
